@@ -189,52 +189,33 @@ function Needy:RollOnIt(tCurrentElement)
 	end
 	
 	if self.nGreedRunes < eNeedy.disabled and tItem:GetItemType() <= 345 and tItem:GetItemType() >= 339 then
-		self:RollOnRunes(tCurrentElement, nLootID)
+		self:RollOnT(tCurrentElement, nLootID)
 		return
 	end
 	
 	if self.nGreedSurvivalist < eNeedy.disabled and tItem:GetItemId() <= 43013 and tItem:GetItemId() >= 42996 then
-		self:RollOnSurvivalist(nLootID)
+		self:RollOnThis(self.nGreedSurvivalist, nLootID)
 		return
 	end
 	
 	if self.nGreedFragments < eNeedy.disabled and tItem:GetItemId() <= 29613 and tItem:GetItemId() >= 29609 then
-		self:RollOnFragments(nLootID)
+		self:RollOnThis(self.nGreedFragments,nLootID)
 		return
 	end
 	
 	if self.nGreedMisc < eNeedy.disabled then
-		self:RollOnEverythingElse(nLootID)
+		self:RollOnThis(self.nGreedMisc, nLootID)
 	end
 end
 
-function Needy:RollOnEverythingElse(itemID)
-	if self.nGreedMisc == eNeedy.need then 
+function Needy:RollOnThis(option,itemID)
+	if option== eNeedy.need then 
 		self:Need(itemID)
 	else
 		self:Greed(itemID)
 	end
 end
 
-function Needy:RollOnSurvivalist(tItem, itemID)
-	if self.nGreedSurvivalist == eNeedy.need then
-		self:Need(itemID)
-		return true
-	else
-		self:Greed(itemID)
-		return true
-	end
-end
-
-function Needy:RollOnFragments(itemID)
-	if self.nGreedFragments == eNeedy.need then
-		self:Need(itemID)
-		return true
-	else
-		self:Greed(itemID)
-		return true
-	end
-end
 function Needy:RollOnRunes(tLoot, itemID)
 	local tItem = tLoot.itemDrop
 	if self.btRuneTypes[self.tUI.ItemTypeToSigilEnum[tItem:GetItemType()]] then
