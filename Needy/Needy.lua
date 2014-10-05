@@ -189,7 +189,7 @@ function Needy:RollOnIt(tCurrentElement)
 	end
 	
 	if self.nGreedRunes < eNeedy.disabled and tItem:GetItemType() <= 345 and tItem:GetItemType() >= 339 then
-		self:RollOnT(tCurrentElement, nLootID)
+		self:RollOnRunes(tCurrentElement, nLootID)
 		return
 	end
 	
@@ -218,6 +218,7 @@ end
 
 function Needy:RollOnRunes(tLoot, itemID)
 	local tItem = tLoot.itemDrop
+	Print(tItem:GetItemType())
 	if self.btRuneTypes[self.tUI.ItemTypeToSigilEnum[tItem:GetItemType()]] then
 		if self.nGreedRunes == eNeedy.need then
 			self:Need(itemID)
