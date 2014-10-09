@@ -34,7 +34,9 @@ local tNeedySettings = {
 	"totalRolls",
 	"tNeedySetOne",
 	"tNeedySetTwo",
-	"setName"
+	"setName",
+	"bInformGroup",
+	"bDebug"
 }
 
 
@@ -88,10 +90,16 @@ function Needy:OnDocLoaded()
 			self.totalRolls = 0
 		end
 		
+		if self.bInformGroup == nil then
+			self.bInformGroup = false
+		end
+		
+		if self.bDebug == nil then
+		 	self.bDebug = false
+		end
 
 		
 		if self.tNeedySetOne == nil then
-			Print ("Durch 1")
 			self.tNeedySetOne = {
 				"nGreedEquipment",
 				"nGreedMisc",
@@ -108,7 +116,6 @@ function Needy:OnDocLoaded()
 		end
 		
 		if self.tNeedySetTwo == nil then
-			Print ("Durch 2")
 			self.tNeedySetTwo = {
 				"nGreedEquipment",
 				"nGreedMisc",
@@ -136,9 +143,10 @@ function Needy:OnDocLoaded()
 		Apollo.RegisterSlashCommand("rolls", 				"OnNeedyRolls", self)
 		Apollo.RegisterSlashCommand("needysetone", 			"setSetOne", self)
 		Apollo.RegisterSlashCommand("needysettwo", 			"setSetTwo", self)
+		Apollo.RegisterSlashCommand("needyinform", 			"NotifySettings", self)
 		Apollo.RegisterEventHandler("LootRollUpdate",		"OnGroupLoot", self)
 		Apollo.RegisterEventHandler("Group_AcceptInvite",	"OnGroupAcceptInvite", self)		-- ()
-		Apollo.RegisterTimerHandler("NotifySettings", "NotifySettings", self)
+		Apollo.RegisterTimerHandler("NotifySettings", 		"NotifySettings", self)
 
 
 		
@@ -161,7 +169,9 @@ function Needy:OnDocLoaded()
 		
 		self.tUI.btnEquipPass = self.wndMain:FindChild("EquipmentPassButton")
 		self.tUI.btnGreedAll = self.wndMain:FindChild("GreedAllButton")
-		
+		self.tUI.btnInformGroup = self.wndMain:FindChild("btnInformGroup")	
+		self.tUI.btnDebug = self.wndMain:FindChild("btnDebug")
+			
 		--set up converter tables
 		self.tUI.BtnToQuality = {}
 		self.tUI.BtnToQuality[1] = Item.CodeEnumItemQuality.Average
@@ -198,47 +208,51 @@ function Needy:OnDocLoaded()
 		end
 	end
 end
-
+function Needy:printDebug(message)
+	if self.bDebug then
+		Print(message)
+	end
+end
 function Needy:OnGroupAcceptInvite()
-	Print ("Ausgeloest 1")
-	Apollo.CreateTimer("NotifySettings", 3, false)
+	if self.bInformGroup then
+		Apollo.CreateTimer("NotifySettings", 3, false)
+	end
 end
 
 function Needy:NotifySettings()
-	Print ("Ausgeloest 2")
-	self:sendGroupMessage("I use Needy my Settings are:")
+	self:sendGroupMessage("I use Needy my settings are:")
 	if self.bGreedAll then
-		self:sendGroupMessage("I Greed on all non-needable Items")
+		self:sendGroupMessage("I greed on all non-needable items")
 	end
 	if self.bEquipPass then
-		self:sendGroupMessage("I Pass on all non Needable Equipment items")
+		self:sendGroupMessage("I pass on all non-needable equipment items")
 	end
 	if self.nGreedEquipment == eNeedy.greed then
-		self:sendGroupMessage ("I greed on all Equipment with quality "..self:getQualityString(self.eGreedQuality).." and lower")
+		self:sendGroupMessage ("I greed on all equipment with quality "..self:getQualityString(self.eGreedQuality).." and lower")
 	end
 	if self.nGreedRunes == eNeedy.need then
-		self:sendGroupMessage ("I need on Sigils")
+		self:sendGroupMessage ("I need on sigils")
 	end
 	if self.nGreedRunes == eNeedy.greed then
-		self:sendGroupMessage ("I greed on Sigils")
+		self:sendGroupMessage ("I greed on sigils")
 	end
 	if self.nGreedFragments == eNeedy.need then
-		self:sendGroupMessage ("I need on Fragments")
+		self:sendGroupMessage ("I need on fragments")
 	end
 	if self.nGreedFragments == eNeedy.greed then
-		self:sendGroupMessage ("I greed on Fragments")
+		self:sendGroupMessage ("I greed on fragments")
 	end
 	if self.nGreedSurvivalist == eNeedy.need then
-		self:sendGroupMessage ("I need on Survivalist Loot")
+		self:sendGroupMessage ("I need on survivalist loot")
 	end
 	if self.nGreedSurvivalist == eNeedy.greed then
-		self:sendGroupMessage ("I greed on survivalist Loot")
+		self:sendGroupMessage ("I greed on survivalist loot")
 	end
 	if self.nGreedMisc == eNeedy.need then
-		self:sendGroupMessage ("I need on Everything else")
+		self:sendGroupMessage ("I need on everything else")
 	end
 	if self.nGreedMisc == eNeedy.greed then
-		self:sendGroupMessage ("I greed on Everything else")
+		self:sendGroupMessage ("I greed on everything else")
 	end
 end
 function Needy:getQualityString(quality)
@@ -259,7 +273,7 @@ function Needy:getQualityString(quality)
 	end	
 end
 function Needy:setSetOne()
-	Print("Loading Set One")
+	self:printDebug("Loading Set One")
 	self:saveSet()
 	self:loadSetOne()
 	self.setName = 1
@@ -267,7 +281,7 @@ function Needy:setSetOne()
 end
 
 function Needy:setSetTwo()
-	Print("Loading Set Two")
+	self:printDebug("Loading Set Two")
 	self:saveSet()
 	self:loadSetTwo()
 	self.setName = 2
@@ -276,11 +290,11 @@ end
 
 function Needy:saveSet()
 	if self.setName == 1 then
-		Print("Saving Set One")
+		self:printDebug("Saving Set One")
 		self:saveSetOne()
 	end
 	if self.setName == 2 then
-		Print("Saving Set Two")
+		self:printDebug("Saving Set Two")
 		self:saveSetTwo()
 	end
 end
@@ -398,6 +412,9 @@ function Needy:RollOnIt(tCurrentElement)
 	if self.nGreedMisc < eNeedy.disabled then
 		self:RollOnThis(self.nGreedMisc, nLootID)
 	end
+	
+	self:printDebug(tItem:GetItemId())
+	self:printDebug(tItem:GetItemType())
 end
 
 function Needy:RollOnThis(option,itemID)
@@ -447,9 +464,6 @@ end
 
 function Needy:RollOnEquipables(tItem,lootID)
 	--equipment
-	if self.bEquipPass then 
-		self:Pass(itemID)
-	end
 	if self.nGreedEquipment == eNeedy.need then
 		self:GreedIfNeedNotAllowed(lootID)
 		return true
@@ -464,6 +478,9 @@ function Needy:Pass(itemID)
 end
 function Needy:GreedOnLowQuality(quality, tItem, lootID)
 	if quality > tItem:GetItemQuality() then
+		if self.bEquipPass then 
+			self:Pass(itemID)
+		end
 		self:Greed(lootID)
 		return true
 	else
@@ -512,6 +529,7 @@ function Needy:DefaultSettings()
 	
 	self.bEquipPass = false
 	self.bGreedAll = false
+	self.bInformGroup = false
 	
 	self.eGreedQuality = Item.CodeEnumItemQuality.Good
 	self.totalRolls = 0
@@ -593,6 +611,8 @@ function Needy:OnApply()
 	
 	self.eGreedQuality = self.tUI.BtnToQuality[self.tUI.wndRarity:GetRadioSel("Rarity_RadioGroup")]
 	self.bEquipPass = self.tUI.btnEquipPass:IsChecked()
+	self.bInformGroup = self.tUI.btnInformGroup:IsChecked()
+	self.bDebug = self.tUI.btnDebug:IsChecked()
 	self.bGreedAll = self.tUI.btnGreedAll:IsChecked()
 	self.wndMain:Close() -- hide the window
 end
@@ -653,6 +673,8 @@ function Needy:OnNeedyOn()
 	self.tUI.btnWater:SetCheck(self.btRuneTypes[Item.CodeEnumSigilType.Water])
 	
 	self.tUI.btnEquipPass:SetCheck(self.bEquipPass)
+	self.tUI.btnInformGroup:SetCheck(self.bInformGroup)
+	self.tUI.btnDebug:SetCheck(self.bDebug)
 	self.tUI.btnGreedAll:SetCheck(self.bGreedAll)
 	self.wndMain:Invoke() -- show the window
 end
@@ -663,6 +685,10 @@ function Needy:sendGroupMessage(message)
 		if channel:GetType() == ChatSystemLib.ChatChannel_Party then
 			channel:Send("[Needy] " .. message)
 		end
+		if channel:GetType() == ChatSystemLib.ChatChannel_Instance then
+			channel:Send("[Needy] " .. message)
+		end
+
 	end
 end
 -----------------------------------------------------------------------------------------------
