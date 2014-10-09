@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------------------------
 -- Client Lua Script for Needy
--- A Needy Fork
--- Copyright (c) NCsoft. All rights reserved
+-- A Greedy Fork
 -----------------------------------------------------------------------------------------------
  
 require "Window"
 require "GameLib"
 require "Item"
- 
+require "ChatSystemLib"
+
 -----------------------------------------------------------------------------------------------
 -- Needy Module Definition
 -----------------------------------------------------------------------------------------------
@@ -31,8 +31,12 @@ local tNeedySettings = {
 	"bEquipPass",
 	"bGreedAll",
 	"eGreedQuality",
-	"totalRolls"
+	"totalRolls",
+	"tNeedySetOne",
+	"tNeedySetTwo",
+	"setName"
 }
+
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -83,6 +87,46 @@ function Needy:OnDocLoaded()
 		if self.totalRolls == nil then
 			self.totalRolls = 0
 		end
+		
+
+		
+		if self.tNeedySetOne == nil then
+			Print ("Durch 1")
+			self.tNeedySetOne = {
+				"nGreedEquipment",
+				"nGreedMisc",
+				"nGreedSurvivalist",
+				"nGreedFragments",
+				"nGreedRunes",
+				"btRuneTypes",
+				"bEquipPass",
+				"bGreedAll",
+				"eGreedQuality"
+				}
+				
+			self:DefaultSettingsFor(self.tNeedySetOne)
+		end
+		
+		if self.tNeedySetTwo == nil then
+			Print ("Durch 2")
+			self.tNeedySetTwo = {
+				"nGreedEquipment",
+				"nGreedMisc",
+				"nGreedSurvivalist",
+				"nGreedFragments",
+				"nGreedRunes",
+				"btRuneTypes",
+				"bEquipPass",
+				"bGreedAll",
+				"eGreedQuality"
+				}
+			self:DefaultSettingsFor(self.tNeedySetTwo)
+		end
+		
+		if self.setName == nil then
+			self.setName = 1
+			self:saveSet()
+		end
 		-- if the xmlDoc is no longer needed, you should set it to nil
 		-- self.xmlDoc = nil
 		
@@ -90,7 +134,13 @@ function Needy:OnDocLoaded()
 		-- e.g. Apollo.RegisterEventHandler("KeyDown", "OnKeyDown", self)
 		Apollo.RegisterSlashCommand("needy", 				"OnNeedyOn", self)
 		Apollo.RegisterSlashCommand("rolls", 				"OnNeedyRolls", self)
+		Apollo.RegisterSlashCommand("needysetone", 			"setSetOne", self)
+		Apollo.RegisterSlashCommand("needysettwo", 			"setSetTwo", self)
 		Apollo.RegisterEventHandler("LootRollUpdate",		"OnGroupLoot", self)
+		Apollo.RegisterEventHandler("Group_AcceptInvite",	"OnGroupAcceptInvite", self)		-- ()
+		Apollo.RegisterTimerHandler("NotifySettings", "NotifySettings", self)
+
+
 		
 		--look up imporant form elements now (so we don't have to search again each time)
 		self.tUI = {}
@@ -147,6 +197,148 @@ function Needy:OnDocLoaded()
 			self:OnGroupLoot()
 		end
 	end
+end
+
+function Needy:OnGroupAcceptInvite()
+	Print ("Ausgeloest 1")
+	Apollo.CreateTimer("NotifySettings", 3, false)
+end
+
+function Needy:NotifySettings()
+	Print ("Ausgeloest 2")
+	self:sendGroupMessage("I use Needy my Settings are:")
+	if self.bGreedAll then
+		self:sendGroupMessage("I Greed on all non-needable Items")
+	end
+	if self.bEquipPass then
+		self:sendGroupMessage("I Pass on all non Needable Equipment items")
+	end
+	if self.nGreedEquipment == eNeedy.greed then
+		self:sendGroupMessage ("I greed on all Equipment with quality "..self:getQualityString(self.eGreedQuality).." and lower")
+	end
+	if self.nGreedRunes == eNeedy.need then
+		self:sendGroupMessage ("I need on Sigils")
+	end
+	if self.nGreedRunes == eNeedy.greed then
+		self:sendGroupMessage ("I greed on Sigils")
+	end
+	if self.nGreedFragments == eNeedy.need then
+		self:sendGroupMessage ("I need on Fragments")
+	end
+	if self.nGreedFragments == eNeedy.greed then
+		self:sendGroupMessage ("I greed on Fragments")
+	end
+	if self.nGreedSurvivalist == eNeedy.need then
+		self:sendGroupMessage ("I need on Survivalist Loot")
+	end
+	if self.nGreedSurvivalist == eNeedy.greed then
+		self:sendGroupMessage ("I greed on survivalist Loot")
+	end
+	if self.nGreedMisc == eNeedy.need then
+		self:sendGroupMessage ("I need on Everything else")
+	end
+	if self.nGreedMisc == eNeedy.greed then
+		self:sendGroupMessage ("I greed on Everything else")
+	end
+end
+function Needy:getQualityString(quality)
+	if quality == 1 then
+		return "white"
+	end
+	if quality == 2 then
+		return "green"
+	end
+	if quality == 3 then
+		return "blue"
+	end
+	if quality == 4 then
+		return "eternal"
+	end
+	if quality == 5 then
+		return "quality above eternal"
+	end	
+end
+function Needy:setSetOne()
+	Print("Loading Set One")
+	self:saveSet()
+	self:loadSetOne()
+	self.setName = 1
+	self.wndMain:Close()
+end
+
+function Needy:setSetTwo()
+	Print("Loading Set Two")
+	self:saveSet()
+	self:loadSetTwo()
+	self.setName = 2
+	self.wndMain:Close()
+end
+
+function Needy:saveSet()
+	if self.setName == 1 then
+		Print("Saving Set One")
+		self:saveSetOne()
+	end
+	if self.setName == 2 then
+		Print("Saving Set Two")
+		self:saveSetTwo()
+	end
+end
+
+function Needy:overtakeSet(setToBeSet, newSet)
+	setToBeSet.nGreedEquipment = newSet.nGreedEquipment
+	setToBeSet.nGreedMisc = newSet.nGreedMisc
+	setToBeSet.nGreedSurvivalist = newSet.nGreedSurvivalist
+	setToBeSet.nGreedFragments = newSet.nGreedFragments
+	setToBeSet.btRuneTypes = newSet.btRuneTypes
+	setToBeSet.bEquipPass = newSet.bEquipPass
+	setToBeSet.bGreedAll = newSet.bGreedAll
+	setToBeSet.eGreedQuality = newSet.eGreedQuality
+end
+
+function Needy:saveSetOne()
+	self.tNeedySetOne.nGreedEquipment = self.nGreedEquipment
+	self.tNeedySetOne.nGreedMisc = self.nGreedMisc
+	self.tNeedySetOne.nGreedSurvivalist = self.nGreedSurvivalist
+	self.tNeedySetOne.nGreedFragments = self.nGreedFragments
+	self.tNeedySetOne.btRuneTypes = self.btRuneTypes
+	self.tNeedySetOne.bEquipPass = self.bEquipPass
+	self.tNeedySetOne.bGreedAll = self.bGreedAll
+	self.tNeedySetOne.eGreedQuality = self.eGreedQuality
+end
+
+function Needy:saveSetTwo()
+	self.tNeedySetTwo.nGreedEquipment = self.nGreedEquipment
+	self.tNeedySetTwo.nGreedMisc = self.nGreedMisc
+	self.tNeedySetTwo.nGreedSurvivalist = self.nGreedSurvivalist
+	self.tNeedySetTwo.nGreedFragments = self.nGreedFragments
+	self.tNeedySetTwo.btRuneTypes = self.btRuneTypes
+	self.tNeedySetTwo.bEquipPass = self.bEquipPass
+	self.tNeedySetTwo.bGreedAll = self.bGreedAll
+	self.tNeedySetTwo.eGreedQuality = self.eGreedQuality
+end
+
+
+function Needy:loadSetOne()
+	self.nGreedEquipment = self.tNeedySetOne.nGreedEquipment
+	self.nGreedMisc = self.tNeedySetOne.nGreedMisc
+	self.nGreedSurvivalist = self.tNeedySetOne.nGreedSurvivalist
+	self.nGreedFragments = self.tNeedySetOne.nGreedFragments
+	self.btRuneTypes = self.tNeedySetOne.btRuneTypes
+	self.bEquipPass = self.tNeedySetOne.bEquipPass
+	self.bGreedAll = self.tNeedySetOne.bGreedAll
+	self.eGreedQuality = self.tNeedySetOne.eGreedQuality
+end
+
+function Needy:loadSetTwo()
+	self.nGreedEquipment = self.tNeedySetTwo.nGreedEquipment
+	self.nGreedMisc = self.tNeedySetTwo.nGreedMisc
+	self.nGreedSurvivalist = self.tNeedySetTwo.nGreedSurvivalist
+	self.nGreedFragments = self.tNeedySetTwo.nGreedFragments
+	self.btRuneTypes = self.tNeedySetTwo.btRuneTypes
+	self.bEquipPass = self.tNeedySetTwo.bEquipPass
+	self.bGreedAll = self.tNeedySetTwo.bGreedAll
+	self.eGreedQuality = self.tNeedySetTwo.eGreedQuality
 end
 
 -----------------------------------------------------------------------------------------------
@@ -218,13 +410,12 @@ end
 
 function Needy:RollOnRunes(tLoot, itemID)
 	local tItem = tLoot.itemDrop
-	Print(tItem:GetItemType())
 	if self.btRuneTypes[self.tUI.ItemTypeToSigilEnum[tItem:GetItemType()]] then
 		if self.nGreedRunes == eNeedy.need then
 			self:Need(itemID)
 			return true
 		else
-			self:Gred(itemID)
+			self:Greed(itemID)
 			return true
 		end
 	else
@@ -327,6 +518,31 @@ function Needy:DefaultSettings()
 	self.restored = true
 end
 
+-- set default settings
+function Needy:DefaultSettingsFor(option)
+	option.nGreedEquipment = eNeedy.need
+	option.nGreedMisc = eNeedy.disabled
+	option.nGreedSurvivalist = eNeedy.disabled
+	option.nGreedFragments = eNeedy.disabled
+	option.nGreedRunes = eNeedy.greed
+
+	option.btRuneTypes = {}
+	option.btRuneTypes[Item.CodeEnumSigilType.Air] = false
+	option.btRuneTypes[Item.CodeEnumSigilType.Earth] = false
+	option.btRuneTypes[Item.CodeEnumSigilType.Fire] = false
+	option.btRuneTypes[Item.CodeEnumSigilType.Water] = false
+	option.btRuneTypes[Item.CodeEnumSigilType.Fusion] = false
+	option.btRuneTypes[Item.CodeEnumSigilType.Life] = false
+	option.btRuneTypes[Item.CodeEnumSigilType.Logic] = false
+	
+	option.bEquipPass = false
+	option.bGreedAll = false
+	
+	option.eGreedQuality = Item.CodeEnumItemQuality.Good
+	option.totalRolls = 0
+	option.restored = true
+end
+
 -- Save User Settings
 function Needy:OnSave(eType)
 	if eType ~= GameLib.CodeEnumAddonSaveLevel.Character then return end
@@ -349,7 +565,11 @@ function Needy:OnRestore(eType, t)
 	self.restored = true
 end
 
-
+function Needy:reloadSettings(t)
+	for idx,property in ipairs(t) do
+		if t[property] ~= nil then self[property] = t[property] end
+	end
+end
 
 -----------------------------------------------------------------------------------------------
 -- NeedyForm Functions
@@ -436,8 +656,15 @@ function Needy:OnNeedyOn()
 	self.tUI.btnGreedAll:SetCheck(self.bGreedAll)
 	self.wndMain:Invoke() -- show the window
 end
-
-
+-----
+-- helper for Chat Messages
+function Needy:sendGroupMessage(message)
+	for _,channel in pairs(ChatSystemLib.GetChannels()) do
+		if channel:GetType() == ChatSystemLib.ChatChannel_Party then
+			channel:Send("[Needy] " .. message)
+		end
+	end
+end
 -----------------------------------------------------------------------------------------------
 -- Needy Instance
 -----------------------------------------------------------------------------------------------

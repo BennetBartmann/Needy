@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Kaleitron&Serilius" APIVersion="9" Name="Needy" Description="Automatically select greed on various things.">
+<Addon Author="Bennet" APIVersion="9" Name="Needy" Description="Automatically select greed on various things.">
     <Script Name="Needy.lua"/>
     <Form Name="Needy.xml"/>
 </Addon>
